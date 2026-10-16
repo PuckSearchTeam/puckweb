@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weland: the constraint language of Puck</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Weland</h1>
+    </header>
+    <nav>
+        <a href="index.html">Presentation</a>
+        <a href="weland.html" class="active">Weland</a>
+        <a href="downloads.html">Downloads</a>
+    </nav>
+    <div class="container">
+        <section id="syntax">
+            <h2>The language</h2>
+            <p>A <code>decouple.wld</code> file at the root of a project declares the project's <em>context</em>, from which Puck generates coupling constraints, and the decisions of the architect, written as clauses. Names are the fully qualified names Puck gives to the nodes of the dependency graph: packages, types, <code>Class.field</code>, <code>Class.method(ParamType, …)</code>. A method's parameter list is part of its name. Line comments start with <code>//</code>.</p>
+            <pre>
+axis a = [ name, … ];            // an axis of change: the entities tagged with it (may be empty)
+set  s = [ name, … ];            // a set that is not an axis
+speed a &lt; b &lt; c, d;             // the speed of change, slowest first; c and d unordered
+difficulty X &lt; Y;               // the difficulty to change: Y is harder to change than X
+apart a, b, c;                   // keep unordered axes apart: each hidden from the others
+hide X from Y;                   // no element of X may appear in the scope of an element of Y
+hide X except X2 from Y but-not-from Y2;
+hide X;                          // X hidden from every node
+separate X;                      // the members of X hidden from one another
+friend F of X;                   // F may use X despite every clause; "of all" exempts F from all
+            </pre>
+            <p>Every entity has an <em>effective axis</em>: its own tag, or the axis of its container. An entity whose tag differs from its container's axis is an <em>axis mismatch</em>, which Puck reports as a violation of containment: two reasons to change in one scope. The clauses generated from the context are: for <code>speed a &lt; b</code>, <code>hide b from a;</code> (the faster axis hidden from the slower); for <code>difficulty X &lt; Y</code>, <code>hide X from Y;</code> (the easier hidden from the harder); both along the whole chain; and for <code>apart a, b, c;</code>, each axis hidden from the others. Where a clause takes a set it may list several, their union being meant. The set <code>tests</code> is predefined: the classes under the project's test source roots. Sets and hand-written clauses alone, without a context, still work: every set but <code>tests</code> is then an axis.</p>
+        </section>
+
+        <section id="engine">
+            <h2>A Clean Architecture program</h2>
+            <p>The chess engine of the case study: seven axes, one or two packages each, ranked by speed of change. The speed chain generates the Dependency Rule, each axis hidden from the axes that change less often. The composition root is a friend of all, the tests are left out, and an optional decision keeps the four unordered axes apart, which brings the Acyclic Dependencies Principle in. Puck reports no violation.</p>
+            <pre>
+// The seven axes of the engine, ranked by speed of change:
+// rules &lt; policy &lt; {strategies, valuation, pieces, protocol} &lt; wiring.
+axis rules      = [org.chesskrk.domain]
+axis policy     = [org.chesskrk.application.port.in, org.chesskrk.application.port.out]
+axis strategies = [org.chesskrk.application.usecase]
+axis valuation  = [org.chesskrk.adapter.tablebase, org.chesskrk.adapter.heuristic]
+axis pieces     = [org.chesskrk.adapter.pieces]
+axis protocol   = [org.chesskrk.adapter.uci]
+axis wiring     = [org.chesskrk.infrastructure]
+
+// The speed of change, slowest axis first; the clauses of the Dependency Rule follow:
+// each axis is hidden from the axes that change less often.
+speed rules &lt; policy &lt; strategies, valuation, pieces, protocol &lt; wiring;
+
+// Decisions of the architect.
+friend wiring of all;   // the composition root must see everything to assemble it
+friend tests of all;    // the tests are neither wiring nor an axis
+
+// Optional: ADP. Keeping the four unordered axes apart hides each from the others, so no pair is
+// permitted in both directions and every cycle of uses through two axes contains a violation.
+apart strategies, valuation, pieces, protocol;
+            </pre>
+        </section>
+
+        <section id="naive">
+            <h2>The same context on a naive program</h2>
+            <p>The naive version of the same engine: three classes in one package. The axes are the same, but their entities are now members and classes rather than packages: the package is tagged <code>rules</code>, and the methods of <code>Engine</code> that belong to another axis are tagged with it. Two axes are empty, since the naive program has no port and no variant piece. The clauses are unchanged. Puck reports 17 violated edges under the Dependency Rule, 14 of them axis mismatches, and 31 with the optional decision.</p>
+            <pre>
+axis rules      = [org.chesskrk.naive]
+axis policy     = []
+axis strategies = [org.chesskrk.naive.Engine.bestMove(),
+                  org.chesskrk.naive.Engine.tablebase(),
+                  org.chesskrk.naive.Engine.tablebase]
+axis valuation  = [org.chesskrk.naive.Tablebase]
+axis pieces     = []
+axis protocol   = [org.chesskrk.naive.Main,
+                  org.chesskrk.naive.Engine.setPosition(String),
+                  org.chesskrk.naive.Engine.clear(),
+                  org.chesskrk.naive.Engine.parseFen(String),
+                  org.chesskrk.naive.Engine.parseSquare(String),
+                  org.chesskrk.naive.Engine.squareName(int),
+                  org.chesskrk.naive.Engine.moveName(int),
+                  org.chesskrk.naive.Engine.valid]
+axis wiring     = [org.chesskrk.naive.Main.ENGINE, org.chesskrk.naive.Main.OUT]
+
+speed rules &lt; policy &lt; strategies, valuation, pieces, protocol &lt; wiring;
+
+friend wiring of all;
+friend tests of all;
+
+// Optional: ADP
+apart strategies, valuation, pieces, protocol;
+            </pre>
+        </section>
+
+        <section id="martin">
+            <h2>Robert C. Martin's examples</h2>
+            <p><strong>Single Responsibility.</strong> <code>Rectangle</code> holds <code>area()</code>, geometry, and <code>draw()</code>, user interface. Two axes, the geometry changing less often. The method is tagged with the other axis: an axis mismatch, one violation, repaired by moving the method out.</p>
+            <pre>
+axis geometry = [martin.srp.geometry]
+axis ui       = [martin.srp.ui, martin.srp.geometry.Rectangle.draw(Canvas)]
+speed geometry &lt; ui;      // generates: hide ui from geometry
+            </pre>
+            <p><strong>Stable Dependencies.</strong> A core used by two applications depends on an experimental helper. The speed order leaves the core and the helper unordered; the clause between them comes from the difficulty order alone: what is easier to change is hidden from what is harder.</p>
+            <pre>
+axis core         = [martin.sdp.core]
+axis experimental = [martin.sdp.experimental]
+axis apps         = [martin.sdp.app1, martin.sdp.app2]
+speed core, experimental &lt; apps;     // generates: hide apps from core, experimental
+difficulty experimental &lt; core;     // generates: hide experimental from core
+            </pre>
+            <p><strong>Acyclic Dependencies.</strong> Two packages use each other. The axes are unordered, so the context generates no clause between them: the cycle is a violation only once the architect decides a direction, here with a hand-written clause.</p>
+            <pre>
+axis reports = [martin.adp.reports]
+axis export  = [martin.adp.export]
+// the decision that makes the permitted relation acyclic
+hide export from reports;
+            </pre>
+        </section>
+
+        <section id="buckpal">
+            <h2>A program written by someone else</h2>
+            <p>buckpal, the example application of <em>Get Your Hands Dirty on Clean Architecture</em>: hexagonal, with incoming and outgoing ports. The context was declared from the book and the package layout. <code>separate ports;</code> writes the project's own rule that the two kinds of ports do not depend on each other; the optional decision keeps the three adapters apart. Puck reports one edge, a ranking question rather than a defect: a self-validating command in the ports calls a helper in <code>commons</code>, which the declared order puts below the ports.</p>
+            <pre>
+axis model       = [io.reflectoring.buckpal.application.domain.model]
+axis ports       = [io.reflectoring.buckpal.application.port.in, io.reflectoring.buckpal.application.port.out]
+axis commons     = [io.reflectoring.buckpal.common, io.reflectoring.buckpal.common.validation]
+axis services    = [io.reflectoring.buckpal.application.domain.service]
+axis web         = [io.reflectoring.buckpal.adapter.in.web]
+axis persistence = [io.reflectoring.buckpal.adapter.out.persistence]
+axis wiring      = [io.reflectoring.buckpal]
+
+speed model &lt; ports &lt; commons &lt; services, web, persistence &lt; wiring;
+
+friend wiring of all;   // the composition root must see everything to assemble it
+friend tests of all;    // the tests are neither wiring nor an axis
+separate ports;         // incoming and outgoing ports do not depend on each other (the project's own rule)
+
+// Optional: ADP
+apart services, web, persistence;
+            </pre>
+        </section>
+
+        <section id="handwritten">
+            <h2>Hand-written clauses</h2>
+            <p>The clauses the context generates can also be written directly, with two refinements: <code>except</code> removes a sub-set from what is hidden, <code>but-not-from</code> removes a sub-set from whom it is hidden. Typical uses: the concrete classes of a hierarchy hidden from their clients, the abstraction excepted; and a factory allowed to see them.</p>
+            <pre>
+set shapes   = [app.shapes]
+set abstract = [app.shapes.Shape]
+set clients  = [app.rendering, app.reports]
+set factory  = [app.shapes.ShapeFactory]
+hide shapes except abstract from clients but-not-from factory;
+separate shapes;        // no concrete shape depends on another
+            </pre>
+        </section>
+    </div>
+    <footer>
+        <p>&copy; 2024&ndash;2026 Puck Plugin Team.</p>
+    </footer>
+</body>
+</html>
