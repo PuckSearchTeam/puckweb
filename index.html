@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PUCK: a Dependency Hunter & Breaker Tool</title>
+    <title>Puck: a coupling-constraint checker for IntelliJ</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <header>
-        <h1>PUCK: A Dependency Hunter & Breaker Tool</h1>
+        <h1>Puck: a coupling-constraint checker for IntelliJ</h1>
     </header>
     <nav>
         <a href="index.html" class="active">Presentation</a>
@@ -17,20 +17,15 @@
     <div class="container">
         <section id="presentation">
             <!-- <h2>Presentation</h2> -->
-            <p>Welcome to the <strong>Puck</strong> Plugin page! Here you can find the latest downloads, updates, and instructions for using the Puck Plugin with IntelliJ.</p>
-            <p><strong>Puck</strong> is an architecture refactoring tool designed to enhance your development experience by providing bad dependencies identification within IntelliJ.</p>
-            <p><strong>Weland</strong> is a language interpreted by Puck to design dependency rules by expressing coupling constraints. 
-                It allows to defind sets of Java code named elements such as package, class, attribute, method/constructor. 
-                Its core predicate is of the form "hide X from Y", where X and Y are sets. 
-                A dependency rule consists in the declaration of these sets followed by such a predicate and states that no element in Y must not depend on any element of X. 
-                More precisely, no element of the transitive closure of X can appear in the scope of any element of the transitive closure of Y.</p>
-            <p><strong>Puck</strong> dynamically generates and highlights within the code all violations of <strong>Weland</strong> rules.</p>
-            <p><strong>Puck</strong> and <strong>Weland</strong> are developed by the <a href="https://www.lip6.fr/recherche/team.php?acronyme=MoVe">Move</a> team at <a href="http://www.lip6.fr">LIP6</a>, <a href="https://www.sorbonne-universite.fr/">Sorbonne Université</a>.</p>            
-            
+            <p>Welcome to the <strong>Puck</strong> plugin page! Here you can find the latest downloads, updates, and instructions for using the Puck plugin with IntelliJ.</p>
+            <p><strong>Puck</strong> is an IntelliJ plugin that checks coupling constraints on Java code. It builds the dependency graph of a project, reads the constraints from a <code>decouple.wld</code> file at the project root, and reports every violation in the program text, where the IDE reports errors, and in a log. Puck identifies the dependencies to remove; it does not perform the refactorings that remove them.</p>
+            <p><strong>Weland</strong> is the language of that file. Its core predicate is <code>hide X from Y;</code>, where X and Y are sets of named Java elements (packages, classes, fields, methods, constructors): no element of the transitive closure of X may appear in the scope of any element of the transitive closure of Y. Rather than writing such clauses one by one, a file declares the project's <em>axes of change</em> (<code>axis rules = [org.example.domain]</code>), the order in which they change (<code>speed rules &lt; policy &lt; adapters;</code>, the slowest first), which entities are harder to change than others (<code>difficulty</code>), and which unordered axes must stay apart (<code>apart</code>). The hide clauses follow: each axis is hidden from the axes that change less often, the easier from the harder, and the axes kept apart from one another. Decisions of the architect complete the file: <code>friend F of X;</code> exempts a privileged client such as the composition root, <code>separate X;</code> keeps the members of a set apart, and the predefined set <code>tests</code> leaves the tests out of the rules. Hand-written clauses remain available.</p>
+            <p><strong>Puck</strong> runs from the Tools menu or headlessly from the command line, and reports the violations of each clause, the axis mismatches (an entity tagged with an axis other than its container's), and the totals, with or without the optional decisions of the file.</p>
+            <p><strong>Puck</strong> and <strong>Weland</strong> are developed by the <a href="https://www.lip6.fr/recherche/team.php?acronyme=MoVe">MoVe</a> team at <a href="http://www.lip6.fr">LIP6</a>, <a href="https://www.sorbonne-universite.fr/">Sorbonne Université</a>. The plugin is free software under the GNU General Public License, version 3 or later.</p>
         </section>
     </div>
     <footer>
-        <p>&copy; 2024 Puck Plugin Team. All rights reserved.</p>
+        <p>&copy; 2024&ndash;2026 Puck Plugin Team.</p>
     </footer>
 </body>
 </html>
