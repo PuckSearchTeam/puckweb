@@ -36,10 +36,10 @@ friend F of X;                   // F may use X despite every clause; "of all" e
 
         <section id="engine">
             <h2>A Clean Architecture program</h2>
-            <p>The chess engine of the case study: seven axes, one or two packages each, ranked by speed of change. The speed chain generates the Dependency Rule, each axis hidden from the axes that change less often. The composition root is a friend of all, the tests are left out, and an optional decision keeps the four unordered axes apart, which brings the Acyclic Dependencies Principle in. Puck reports no violation.</p>
+            <p>The chess engine of the case study: seven axes, one or two packages each, ranked by speed of change. The speed chain generates the Dependency Rule, each axis hidden from the axes that change less often. The composition root is a friend of all, the tests are left out, and an optional decision keeps the three unordered axes apart, which brings the Acyclic Dependencies Principle in. Puck reports no violation.</p>
             <pre>
 // The seven axes of the engine, ranked by speed of change:
-// rules &lt; policy &lt; {strategies, valuation, pieces, protocol} &lt; wiring.
+// rules &lt; policy &lt; strategies &lt; {valuation, pieces, protocol} &lt; wiring.
 axis rules      = [org.chesskrk.domain]
 axis policy     = [org.chesskrk.application.port.in, org.chesskrk.application.port.out]
 axis strategies = [org.chesskrk.application.usecase]
@@ -50,21 +50,21 @@ axis wiring     = [org.chesskrk.infrastructure]
 
 // The speed of change, slowest axis first; the clauses of the Dependency Rule follow:
 // each axis is hidden from the axes that change less often.
-speed rules &lt; policy &lt; strategies, valuation, pieces, protocol &lt; wiring;
+speed rules &lt; policy &lt; strategies &lt; valuation, pieces, protocol &lt; wiring;
 
 // Decisions of the architect.
 friend wiring of all;   // the composition root must see everything to assemble it
 friend tests of all;    // the tests are neither wiring nor an axis
 
-// Optional: ADP. Keeping the four unordered axes apart hides each from the others, so no pair is
+// Optional: ADP. Keeping the three unordered axes apart hides each from the others, so no pair is
 // permitted in both directions and every cycle of uses through two axes contains a violation.
-apart strategies, valuation, pieces, protocol;
+apart valuation, pieces, protocol;
             </pre>
         </section>
 
         <section id="naive">
             <h2>The same context on a naive program</h2>
-            <p>The naive version of the same engine: three classes in one package. The axes are the same, but their entities are now members and classes rather than packages: the package is tagged <code>rules</code>, and the methods of <code>Engine</code> that belong to another axis are tagged with it. Two axes are empty, since the naive program has no port and no variant piece. The clauses are unchanged. Puck reports 17 violated edges under the Dependency Rule, 14 of them axis mismatches, and 31 with the optional decision.</p>
+            <p>The naive version of the same engine: three classes in one package. The axes are the same, but their entities are now members and classes rather than packages: the package is tagged <code>rules</code>, and the methods of <code>Engine</code> that belong to another axis are tagged with it. Two axes are empty, since the naive program has no port and no variant piece. The clauses are unchanged. Puck reports 26 violated edges under the Dependency Rule, 14 of them axis mismatches, and 29 with the optional decision.</p>
             <pre>
 axis rules      = [org.chesskrk.naive]
 axis policy     = []
@@ -83,13 +83,13 @@ axis protocol   = [org.chesskrk.naive.Main,
                   org.chesskrk.naive.Engine.valid]
 axis wiring     = [org.chesskrk.naive.Main.ENGINE, org.chesskrk.naive.Main.OUT]
 
-speed rules &lt; policy &lt; strategies, valuation, pieces, protocol &lt; wiring;
+speed rules &lt; policy &lt; strategies &lt; valuation, pieces, protocol &lt; wiring;
 
 friend wiring of all;
 friend tests of all;
 
 // Optional: ADP
-apart strategies, valuation, pieces, protocol;
+apart valuation, pieces, protocol;
             </pre>
         </section>
 
