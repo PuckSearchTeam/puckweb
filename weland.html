@@ -119,7 +119,7 @@ hide export from reports;
         </section>
 
         <section id="buckpal">
-            <h2>A program written by someone else</h2>
+            <h2>buckpal, a published hexagonal application</h2>
             <p>buckpal, the example application of <em>Get Your Hands Dirty on Clean Architecture</em>: hexagonal, with incoming and outgoing ports. The context was declared from the book and the package layout. <code>separate ports;</code> writes the project's own rule that the two kinds of ports do not depend on each other; the optional decision keeps the two adapters apart; the services rank below them, as use cases do in Clean Architecture. Puck reports one edge, a ranking question rather than a defect: a self-validating command in the ports calls a helper in <code>commons</code>, which the declared order puts below the ports.</p>
             <pre>
 axis model       = [io.reflectoring.buckpal.application.domain.model]
