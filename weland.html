@@ -120,7 +120,7 @@ hide export from reports;
 
         <section id="buckpal">
             <h2>A program written by someone else</h2>
-            <p>buckpal, the example application of <em>Get Your Hands Dirty on Clean Architecture</em>: hexagonal, with incoming and outgoing ports. The context was declared from the book and the package layout. <code>separate ports;</code> writes the project's own rule that the two kinds of ports do not depend on each other; the optional decision keeps the three adapters apart. Puck reports one edge, a ranking question rather than a defect: a self-validating command in the ports calls a helper in <code>commons</code>, which the declared order puts below the ports.</p>
+            <p>buckpal, the example application of <em>Get Your Hands Dirty on Clean Architecture</em>: hexagonal, with incoming and outgoing ports. The context was declared from the book and the package layout. <code>separate ports;</code> writes the project's own rule that the two kinds of ports do not depend on each other; the optional decision keeps the two adapters apart; the services rank below them, as use cases do in Clean Architecture. Puck reports one edge, a ranking question rather than a defect: a self-validating command in the ports calls a helper in <code>commons</code>, which the declared order puts below the ports.</p>
             <pre>
 axis model       = [io.reflectoring.buckpal.application.domain.model]
 axis ports       = [io.reflectoring.buckpal.application.port.in, io.reflectoring.buckpal.application.port.out]
@@ -130,14 +130,14 @@ axis web         = [io.reflectoring.buckpal.adapter.in.web]
 axis persistence = [io.reflectoring.buckpal.adapter.out.persistence]
 axis wiring      = [io.reflectoring.buckpal]
 
-speed model &lt; ports &lt; commons &lt; services, web, persistence &lt; wiring;
+speed model &lt; ports &lt; commons &lt; services &lt; web, persistence &lt; wiring;
 
 friend wiring of all;   // the composition root must see everything to assemble it
 friend tests of all;    // the tests are neither wiring nor an axis
 separate ports;         // incoming and outgoing ports do not depend on each other (the project's own rule)
 
 // Optional: ADP
-apart services, web, persistence;
+apart web, persistence;
             </pre>
         </section>
 
